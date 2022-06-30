@@ -1,0 +1,267 @@
+<!doctype html>
+<html>
+	<head>
+		<title>My Project</title>
+		<style>
+			canvas{
+				position: absolute;
+				top: 0px;
+				bottom: 0px;
+				left: 0px;
+				right: 0px;
+				margin: auto;
+			}
+
+		</style>
+	</head>
+	<body>	
+		
+		
+		<script>
+
+		const ig = new Image();
+		ig.src =  "imagens/idlegun.png";
+
+		const fg = new Image();
+		fg.src = "imagens/firegun.png";
+
+		const ini = new Image();
+		ini.src = "imagens/inimigo.png";
+
+		var canvas,ctx,sh,sw,px=8,py=5,shoot = false,timeshoot = 10,ex = 5,ey = 5,renderinimigo = false,distinimigo = 11,iniangle = 0,dmax = 11,map = [],
+		vision = [],xangle = 90,yangle = 90;
+
+		function cam (event) {
+  		xangle += 0.2*event.movementX;
+  		yangle += 0.5*event.movementY;
+		}
+
+		document.addEventListener('click', function () {
+			shot();
+			shoot = true;
+			
+		});
+
+		document.addEventListener('mousemove', cam);
+
+		document.addEventListener('keydown', function(event) {
+  		if (event.code == 'KeyW') {
+  			let tx = px,ty = py;
+  			tx+=0.08*Math.sin((((xangle-45)%360)*Math.PI)/180);
+    		ty+=0.08*Math.cos((((xangle-45)%360)*Math.PI)/180);
+  			if(map[tx-tx%1][ty-ty%1] != 1){
+    		px+=0.08*Math.sin((((xangle-45)%360)*Math.PI)/180);
+    		py+=0.08*Math.cos((((xangle-45)%360)*Math.PI)/180);
+    		}
+  		}
+  		if (event.code == 'KeyS' && map[px-px%1][py-py%1] != 1) {
+  			let tx = px,ty = py;
+  			tx+=0.08*Math.sin((((xangle+135)%360)*Math.PI)/180);
+    		ty+=0.08*Math.cos((((xangle+135)%360)*Math.PI)/180);
+  			if(map[tx-tx%1][ty-ty%1] != 1){
+    		px+=0.08*Math.sin((((xangle+135)%360)*Math.PI)/180);
+    		py+=0.08*Math.cos((((xangle+135)%360)*Math.PI)/180);
+    		}
+  		}
+  		if (event.code == 'KeyA') {
+    		let tx = px,ty = py;
+  			tx+=0.08*Math.sin((((xangle-135)%360)*Math.PI)/180);
+    		ty+=0.08*Math.cos((((xangle-135)%360)*Math.PI)/180);
+  			if(map[tx-tx%1][ty-ty%1] != 1){
+    		px+=0.08*Math.sin((((xangle-135)%360)*Math.PI)/180);
+    		py+=0.08*Math.cos((((xangle-135)%360)*Math.PI)/180);
+    		}
+  		}
+  		if (event.code == 'KeyD') {
+    		let tx = px,ty = py;
+  			tx+=0.08*Math.sin((((xangle+45)%360)*Math.PI)/180);
+    		ty+=0.08*Math.cos((((xangle+45)%360)*Math.PI)/180);
+  			if(map[tx-tx%1][ty-ty%1] != 1){
+    		px+=0.08*Math.sin((((xangle+45)%360)*Math.PI)/180);
+    		py+=0.08*Math.cos((((xangle+45)%360)*Math.PI)/180);
+    		}
+  		}
+  	});
+
+		function main(){
+			
+			sh = window.innerHeight;
+			sw = window.innerWidth;
+
+			canvas = document.createElement("canvas");
+			canvas.width = sw;
+			canvas.height = sh;
+			canvas.style.border = "1px solid #000";
+
+			ctx = canvas.getContext("2d");
+			document.body.appendChild(canvas);
+
+			mapset();
+			
+			roda();
+			
+		}
+
+		function mapset(){
+
+			map.push([1,1,1,1,1,1,1,1,1,1]);
+			map.push([1,0,0,0,0,0,0,0,0,1]);
+			map.push([1,0,1,1,1,1,1,0,0,1]);
+			map.push([1,0,1,0,0,0,0,0,0,1]);
+			map.push([1,0,1,0,0,2,0,0,0,1]);
+			map.push([1,0,1,0,0,0,0,0,0,1]);
+			map.push([1,0,0,0,0,0,0,0,0,1]);
+			map.push([1,0,0,0,1,1,1,0,0,1]);
+			map.push([1,0,0,0,0,0,0,0,0,1]);
+			map.push([1,1,1,1,1,1,1,1,1,1]);
+
+
+
+		}
+
+		function shot(){
+
+			xangle%=360;
+			yangle%=360;
+
+				let a = xangle-45;
+				let distance = 0;
+				let hit = false;
+				let dx = 0,dy = 0;
+
+				while(!hit){
+
+					dx = px + distance*Math.sin((a*Math.PI)/180);
+					dy = py + distance*Math.cos((a*Math.PI)/180);
+
+					if(dx-dx%1>ex-2 && dx-dx%1<ex+2 && dy-dy%1>ey-2 && dy-dy%1<ey+2){
+						ex = Math.floor(Math.random()*8);
+						ey = Math.floor(Math.random()*8);
+						hit = true;
+						}
+
+					if(map[dx-dx%1][dy-dy%1] == 1 || distance>=sh/2){
+						hit = true;
+
+					}else{
+						distance+=0.01;
+					}
+
+				}
+
+			}
+
+		
+
+		function fov(){
+
+			xangle%=360;
+			yangle%=360;
+
+			for(var a = xangle - 80,i = 0;a<xangle+80;a+=(80/sw),i++){
+				let distance = 0;
+				let hit = false;
+				let dx = 0,dy = 0;
+
+				while(!hit){
+
+					dx = px + distance*Math.sin((a*Math.PI)/180);
+					dy = py + distance*Math.cos((a*Math.PI)/180);
+
+					if(dx > 9 || dy > 9){
+						vision.push(distance);
+						break;
+					}
+
+					if(dx-dx%1>ex-0.5 && dx-dx%1<ex+0.5 && dy-dy%1>ey-0.5 && dy-dy%1<ey+0.5){
+						renderinimigo = true;
+						distinimigo = distance;
+						iniangle = i;
+						}
+
+					if(map[dx-dx%1][dy-dy%1] == 1 || distance>=sh/2){
+						hit = true;
+						vision.push(distance);
+
+					}else{
+						distance+=0.01;
+					}
+
+				}
+
+			}
+
+		}
+
+		function roda(){
+
+			setTimeout(function() {
+				ctx.fillStyle = "#ffffff";
+				ctx.fillRect(0,0,sw,sh);
+
+				
+				for(var i = 0;i<sw;i++){
+
+					let d = vision[i];
+
+					ctx.fillStyle = cor(d);
+					ctx.fillRect(i,(sh/2)-(sh/d/2)-(yangle),1,sh/d);
+					ctx.fillRect(i,(sh/2)-(yangle),1,sh/d);
+				}
+				
+				if(renderinimigo){
+					inimigo(distinimigo,iniangle);
+					renderinimigo =false;
+				}
+
+				if(shoot){
+					ctx.drawImage(fg,900,400,1000,600);
+					timeshoot--;
+				}else{
+					ctx.drawImage(ig,900,400,1000,600);
+				}
+				
+				if(timeshoot <= 0){
+					shoot = false;
+				}
+
+				vision = []; 
+
+				fov();
+				roda();
+
+			},10);
+		}
+		
+		function inimigo(distinimigo,ang){
+
+			let w = 600/distinimigo,h = 2000/distinimigo;
+
+			ctx.fillStyle = "red"
+			
+			ctx.drawImage(ini,ang,sh/2-yangle-(500/(distinimigo*2)),700/distinimigo,1200/distinimigo);
+		}
+
+		function cor (d){
+
+			if(d<0){
+				d = 0;
+			}
+
+			let cor = "";
+
+			if(d > dmax){
+				cor = "#ffffff";
+			}else{
+				var nn = Math.floor(255*(d/dmax)).toString(16);
+				cor = "#"+nn+nn+nn;
+			}
+
+			return cor;
+		}
+
+		main();
+
+		</script>
+	</body>
+<html>
